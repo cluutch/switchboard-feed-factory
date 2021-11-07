@@ -1,6 +1,7 @@
-import { Connection, Account, clusterApiUrl } from "@solana/web3.js";
+import { Connection, Account, clusterApiUrl, Cluster } from "@solana/web3.js";
 import {
   SWITCHBOARD_DEVNET_PID,
+  SWITCHBOARD_MAINNET_PID,
   setFulfillmentManagerConfigs,
   createFulfillmentManager,
   createFulfillmentManagerAuth,
@@ -10,6 +11,17 @@ import fs from "fs";
 import resolve from "resolve-dir";
 import prompts from "prompts";
 import chalk from "chalk";
+
+function toCluster(cluster: string): Cluster {
+  switch (cluster) {
+    case "devnet":
+    case "testnet":
+    case "mainnet-beta": {
+      return cluster;
+    }
+  }
+  throw new Error("Invalid cluster provided.");
+}
 
 async function main(): Promise<string> {
   const argv = yargs(process.argv.slice(2))
@@ -28,7 +40,7 @@ async function main(): Promise<string> {
     })
     .parseSync();
 
-  const url = clusterApiUrl("devnet", true);
+  const url = clusterApiUrl(toCluster(argv.cluster), true);
   const connection = new Connection(url, "processed");
   const payerKeypair = JSON.parse(
     fs.readFileSync(resolve(argv.payerKeypairFile), "utf-8")
@@ -37,7 +49,7 @@ async function main(): Promise<string> {
   const fulfillmentManagerAccount = await createFulfillmentManager(
     connection,
     payerAccount,
-    SWITCHBOARD_DEVNET_PID
+    SWITCHBOARD_MAINNET_PID
   );
 
   await setFulfillmentManagerConfigs(
